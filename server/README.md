@@ -98,6 +98,20 @@ Nelle impostazioni della card (ingranaggio ⚙️):
 
 Da lì gestisci le fonti (vengono scritte in `config.php`), importi un file OPML e scegli l'ordine dei traduttori. `config.php` contiene già alcune fonti di esempio.
 
+## Pulizia della cache
+
+Tutto quello che finisce in `cache/` si pulisce da solo, non serve fare niente:
+
+| Cosa | Quando si cancella |
+|---|---|
+| `news.json`, `state.json` (notizie) | Riscritti da zero a ogni giro completo, non crescono |
+| `translations/` (traduzioni) | Dopo 21 giorni che non vengono usate. Finché un articolo è nei feed la sua traduzione resta. Il controllo lo fa ogni giro di `rebuild_cache.php` |
+| `summaries/` (riassunti) | Validi 3 giorni, cancellati dopo 7 giorni o oltre 400 file |
+| `progress/` | Dopo 15 minuti |
+| `opml_previews/` | Dopo 3 giorni o oltre 1500 file |
+| `errors.log` | Sopra i 2 MB tiene solo la metà più recente |
+| `debug.log` | Riscritto a ogni giro |
+
 ## I file
 
 | File | A cosa serve |

@@ -44,7 +44,7 @@ define('MAX_RELATED_IMAGE_TRIES', 3);
 // toccata a mano, e non dipende da settings.php). Serve solo a verificare al
 // volo, dalla risposta JSON, se il file effettivamente in esecuzione sul
 // server è quello nuovo o una versione precedente rimasta in giro.
-define('SCRIPT_BUILD', '2026-10-20-01');
+define('SCRIPT_BUILD', '2026-11-19-01');
 
 $settings = require __DIR__ . '/settings.php';
 define('API_TOKEN', $settings['api_token']);
@@ -484,6 +484,15 @@ if (!$lock_fp || !flock($lock_fp, LOCK_EX | LOCK_NB)) {
 // aspettando in flock() può causare comportamenti indefiniti su alcuni
 // filesystem. Lo lasciamo in giro: il contenuto non conta, conta solo il
 // lock che ci gira sopra.
+
+// Pulizia delle traduzioni: a ogni giro si controlla una delle 256 cartelle di
+// cache/translations (scelta a caso) e si tolgono le voci non usate da più di
+// TC_ENTRY_TTL (21 giorni). Con un giro ogni 2 minuti ogni cartella viene
+// controllata in media 2-3 volte al giorno, invece di una volta ogni 1-2 mesi
+// della sola pulizia "a caso" fatta da tc_cache_put(). Costa pochi millisecondi.
+if (function_exists('tc_cleanup_bucket')) {
+    tc_cleanup_bucket(sprintf('%02x', mt_rand(0, 255)));
+}
 
 $sources = require BASE_DIR . '/config.php';
 
