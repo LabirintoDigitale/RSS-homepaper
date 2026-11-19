@@ -38,6 +38,25 @@ In HACS apri **RSS Paper** → **Aggiorna** (o ⋮ → **Aggiorna informazioni**
 
 Copia `rss-news-paper.js` in `config/www/` e aggiungi la risorsa `/local/rss-news-paper.js` come **Modulo JavaScript** in **Impostazioni → Plance → ⋮ → Risorse**.
 
+## Il token (obbligatorio)
+
+Il server e Home Assistant si riconoscono con un **token**, cioè una password condivisa. Lo crei tu una volta e poi lo scrivi, **identico**, in tre posti:
+
+1. **Sul server PHP**, in `news-aggregator/settings.php`, al posto di `CAMBIA_QUESTO_TOKEN`:
+   ```php
+   'api_token'    => 'il-tuo-token',
+   ```
+2. **Nel sensore di Home Assistant**, in `configuration.yaml`, dentro l'indirizzo di `feed.php` (`...feed.php?token=il-tuo-token`). Vedi [server/README.md](server/README.md#sensore-in-home-assistant).
+3. **Nella card**, nel campo **Token amministrazione fonti** delle impostazioni (ingranaggio ⚙️), cioè l'opzione `feed_admin_token`.
+
+Per creare un token usa una stringa lunga e casuale, non una data o un numero corto. Per esempio, sul server:
+
+```bash
+openssl rand -hex 24
+```
+
+Se i tre token non coincidono, il sensore non riceve notizie (il server risponde `forbidden`) e la card non riesce a caricare fonti, traduttore e riassunti (`unauthorized`). Se cambi il token, aggiornalo in tutti e tre i posti.
+
 ## Aggiungere la card
 
 In una plancia: **Modifica** → **Aggiungi scheda** → cerca **RSS News Card**. Oppure in YAML:

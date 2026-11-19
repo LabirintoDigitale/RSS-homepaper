@@ -11,7 +11,7 @@
 ## Installazione
 
 1. Copia la cartella `news-aggregator/` sul server, per esempio in `/var/www/html/news-aggregator/`.
-2. Apri `settings.php` e sostituisci `CAMBIA_QUESTO_TOKEN` con una stringa lunga e segreta. Lo stesso token va nella card (`feed_admin_token`) e nel sensore di Home Assistant.
+2. **Crea il token** e scrivilo in `settings.php` al posto di `CAMBIA_QUESTO_TOKEN`. Usa una stringa lunga e casuale, per esempio quella che restituisce `openssl rand -hex 24`. **Lo stesso token** va scritto anche nel sensore di Home Assistant (passo sotto) e nella card (**Token amministrazione fonti**). Se non coincide in tutti e tre i posti, il server risponde `forbidden` / `unauthorized`.
 3. Dai al server web il permesso di scrivere nella cartella:
    ```bash
    sudo chown -R www-data:www-data /var/www/html/news-aggregator
