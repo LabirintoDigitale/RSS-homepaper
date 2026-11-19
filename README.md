@@ -17,7 +17,14 @@ Card per le plance di Home Assistant che mostra le notizie di più feed RSS come
 
 ## Cosa serve
 
-La card mostra le notizie, ma a raccoglierle è un **server con PHP** (il "news-aggregator"). Il server legge i feed, prepara i riassunti e le traduzioni e gestisce l'elenco delle fonti. Il codice è nella cartella [`server/`](server/), con le istruzioni per installarlo: **[server/README.md](server/README.md)**.
+La card mostra le notizie, ma a raccoglierle è un **server web con PHP** (il "news-aggregator"). Il server legge i feed, prepara i riassunti e le traduzioni e gestisce l'elenco delle fonti. Il codice è nella cartella [`server/`](server/).
+
+Il server può stare:
+
+- **su un'altra macchina** (Raspberry, NAS, PC, container con Apache o nginx);
+- **dentro Home Assistant**, con un add-on che fa da server web con PHP (per esempio *Apache2*). Così non serve un'altra macchina, e l'aggiornamento delle notizie lo fa un'automazione invece di cron.
+
+Le istruzioni passo per passo per tutti e due i casi sono in **[server/README.md](server/README.md)**.
 
 In Home Assistant serve un sensore `command_line` che legge le notizie dal server. Le notizie stanno nell'attributo `articles` e il nome predefinito del sensore è `sensor.news_aggregator`. L'esempio è in [server/README.md](server/README.md#sensore-in-home-assistant). Se il sensore manca o è vuoto, la card mostra un riquadro che spiega cosa non va.
 

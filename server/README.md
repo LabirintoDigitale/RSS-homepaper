@@ -4,11 +4,18 @@
 
 ## Cosa serve
 
-- Un server web con **PHP 7.4 o più recente**, per esempio Apache o nginx su un Raspberry, un NAS o un container.
+Serve un **server web con PHP**. Puoi usare:
+
+- **un server separato**, per esempio un Raspberry, un NAS, un PC o un container con Apache o nginx (vedi [Installazione A](#installazione-a-server-separato));
+- **Home Assistant stesso**, con un add-on che fa da server web con PHP. Così non ti serve un'altra macchina (vedi [Installazione B](#installazione-b-dentro-home-assistant)).
+
+In tutti e due i casi servono:
+
+- **PHP 7.4 o più recente**.
 - Le estensioni PHP **curl**, **mbstring**, **simplexml** e **dom** (su Debian/Ubuntu: `apt install php-curl php-mbstring php-xml`).
 - La cartella `news-aggregator/` deve poter essere scritta dal server web, perché lì viene creata `cache/`.
 
-## Installazione
+## Installazione A: server separato
 
 1. Copia la cartella `news-aggregator/` sul server, per esempio in `/var/www/html/news-aggregator/`.
 2. **Crea il token** e scrivilo in `settings.php` al posto di `CAMBIA_QUESTO_TOKEN`. Usa una stringa lunga e casuale, per esempio quella che restituisce `openssl rand -hex 24`. **Lo stesso token** va scritto anche nel sensore di Home Assistant (passo sotto) e nella card (**Token amministrazione fonti**). Se non coincide in tutti e tre i posti, il server risponde `forbidden` / `unauthorized`.
@@ -26,6 +33,43 @@
      */2 * * * * curl -s "http://IP-DEL-SERVER/news-aggregator/rebuild_cache.php?token=IL_TUO_TOKEN&batch=2" > /dev/null 2>&1
      ```
 5. Dopo il primo giro completo, `http://IP-DEL-SERVER/news-aggregator/feed.php?token=IL_TUO_TOKEN` risponde con le notizie. Prima risponde "cache non ancora generata".
+
+## Installazione B: dentro Home Assistant
+
+Con Home Assistant OS o Supervised puoi far girare il server PHP come add-on, sulla stessa macchina di Home Assistant. Uno degli add-on più usati è **Apache2** di FaserF, che include PHP.
+
+1. **Installa l'add-on**:
+   - **Impostazioni → Componenti aggiuntivi → Raccolta componenti aggiuntivi** → ⋮ → **Repository**;
+   - aggiungi `https://github.com/FaserF/hassio-addons`;
+   - installa **Apache2**, la versione completa: quella "minimal" non ha PHP.
+2. **Configura l'add-on**: lascia la cartella dei siti su `/share/htdocs` (o quella indicata nella scheda *Configurazione*). Poi avvialo e attiva **Avvia all'avvio**.
+3. **Copia i file**: metti la cartella `news-aggregator/` dentro `/share/htdocs/`. Puoi usare l'add-on **Samba share** (cartella `share` → `htdocs`) oppure **Studio Code Server**.
+4. **Token**: in `/share/htdocs/news-aggregator/settings.php` sostituisci `CAMBIA_QUESTO_TOKEN` con il tuo token (vedi passo 2 dell'Installazione A).
+5. **Prova**: apri `http://IP-DI-HOME-ASSISTANT/news-aggregator/feed.php?token=IL_TUO_TOKEN`. Usa la porta dell'add-on se non è la 80. Se risponde "cache non ancora generata", il PHP funziona.
+6. **Aggiornamento automatico**: senza cron, lo fa Home Assistant chiamando `rebuild_cache.php` ogni 2 minuti. In `configuration.yaml`:
+   ```yaml
+   rest_command:
+     news_rebuild:
+       url: "http://IP-DI-HOME-ASSISTANT/news-aggregator/rebuild_cache.php?token=IL_TUO_TOKEN&batch=2"
+       timeout: 60
+   ```
+   e un'automazione:
+   ```yaml
+   alias: News aggregator - aggiorna notizie
+   triggers:
+     - trigger: time_pattern
+       minutes: "/2"
+   actions:
+     - action: rest_command.news_rebuild
+   mode: single
+   ```
+7. **Sensore e card**: aggiungi il sensore (sezione sotto) e nella card imposta il **percorso server** `http://IP-DI-HOME-ASSISTANT/news-aggregator/`.
+
+Cose da sapere:
+
+- Nome e opzioni dell'add-on possono cambiare tra una versione e l'altra: controlla la sua documentazione nella scheda *Documentazione*. Verifica anche che abbia le estensioni PHP **curl**, **mbstring** e **xml**.
+- Se apri Home Assistant in **HTTPS** e il server PHP è in HTTP, il browser blocca le chiamate della card (fonti, riassunti). Il riassunto mostra "contenuto misto". In quel caso abilita l'HTTPS anche nell'add-on.
+- Il primo giro completo può richiedere qualche minuto: dipende da quante fonti hai.
 
 ## Sensore in Home Assistant
 
