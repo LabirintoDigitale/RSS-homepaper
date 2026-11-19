@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
-<title>Importa fonti da OPML</title>
+<title>Importa fonti da OPML o pagina web</title>
 <style>
   :root{--bg:#f4f5f7;--card:#fff;--text:#1d2125;--muted:#6b7280;--line:#dfe3e8;--accent:#0284c7;--accent-text:#fff;--ok:#15803d;--warn:#b45309;--err:#b91c1c;--chip:#e8edf3;}
   @media (prefers-color-scheme:dark){:root{--bg:#111315;--card:#1b1e21;--text:#e8eaed;--muted:#9aa3ad;--line:#2d3237;--accent:#38bdf8;--accent-text:#04202e;--ok:#4ade80;--warn:#fbbf24;--err:#f87171;--chip:#272c31;}}
@@ -118,8 +118,8 @@
 (function () {
 'use strict';
 
-var PAGE_VERSION = '1.0.0';
-var PAGE_BUILD = '2026-09-28-01';
+var PAGE_VERSION = '1.1.0';
+var PAGE_BUILD = '2026-11-19-01';
 var EXAMPLE_URL = 'https://github.com/tuan3w/awesome-tech-rss/blob/main/feeds.opml';
 var PREVIEW_CONCURRENCY = 3;
 var PREVIEW_TIMEOUT_MS = 25000;
@@ -133,9 +133,9 @@ var SOFT_SOURCES = 40, HARD_SOURCES = 80, SOFT_ARTICLES = 1500, HARD_ARTICLES = 
 // ───────────────────────── testi ─────────────────────────
 var I18N = {
   it: {
-    title: 'Importa fonti da OPML', token: 'Token API (lo stesso di settings.php)',
-    opml_lbl: 'Indirizzo del file OPML', load: 'Carica elenco', example: 'Prova con un esempio', hint: '— un link GitHub "blob" va bene, lo converto da solo.',
-    loading_list: 'Leggo l\'elenco…', loaded: '{0} feed trovati', loaded_conv: '{0} feed trovati (link GitHub convertito nel file raw)',
+    title: 'Importa fonti da OPML o da una pagina web', token: 'Token API (lo stesso di settings.php)',
+    opml_lbl: 'Indirizzo di un file OPML o di una pagina con dei feed', load: 'Carica elenco', example: 'Prova con un esempio', hint: '— va bene un link GitHub "blob" a un OPML, oppure una pagina come https://rssly.io/feeds: cerco i feed anche nelle sue sottopagine.',
+    loading_list: 'Leggo l\'elenco… (se è una pagina web controllo tutti gli indirizzi: può servire fino a un minuto)', loaded_page: '{0} feed trovati in {1} pagine ({2} indirizzi controllati, {3} non erano feed)', loaded_timeout: ' · tempo finito: alcuni indirizzi non sono stati controllati', loaded: '{0} feed trovati', loaded_conv: '{0} feed trovati (link GitHub convertito nel file raw)',
     loaded_extra: '{0} già presenti, {1} doppioni nel file uniti, {2} indirizzi non validi ignorati',
     search: 'Cerca per nome, sito o categoria…', all_cats: 'Tutte le categorie', uncat: 'Senza categoria',
     sel_visible: 'Seleziona visibili', sel_none: 'Deseleziona tutto', hide_existing: 'Nascondi già presenti',
@@ -150,15 +150,15 @@ var I18N = {
     confirm_q: 'Aggiungere {0} fonti alla sincronizzazione?', yes_add: 'Sì, aggiungi', cancel: 'Annulla',
     adding: 'Aggiungo {0} di {1}…', done: 'Fatto: aggiunte {0} fonti su {1}.', done_one: 'Fatto: aggiunta 1 fonte su {0}.', done_ok_tail: ' Compariranno nella card dopo i prossimi giri del cron (può servire qualche minuto).',
     failed_hdr: 'Non aggiunte:', stopped: 'Interrotto: {0}',
-    err_token_missing: 'Inserisci il token API.', err_url_missing: 'Inserisci l\'indirizzo del file OPML.',
+    err_token_missing: 'Inserisci il token API.', err_url_missing: 'Inserisci l\'indirizzo del file OPML o della pagina.',
     err_token: 'Token non valido: controlla settings.php.', err_missing_file: 'Il server non ha trovato {0}: copia il file nella stessa cartella di sources_admin.php.',
     err_not_json: 'Risposta inattesa dal server (HTTP {0}).', err_net: 'Server non raggiungibile ({0}).',
     err_timeout: 'tempo scaduto', no_sources_warn: 'Non riesco a leggere le fonti attuali ({0}): non potrò aggiungere finché non si risolve.'
   },
   en: {
-    title: 'Import sources from OPML', token: 'API token (same as settings.php)',
-    opml_lbl: 'OPML file address', load: 'Load list', example: 'Try an example', hint: '— a GitHub "blob" link is fine, I convert it automatically.',
-    loading_list: 'Reading the list…', loaded: '{0} feeds found', loaded_conv: '{0} feeds found (GitHub link converted to the raw file)',
+    title: 'Import sources from OPML or a web page', token: 'API token (same as settings.php)',
+    opml_lbl: 'Address of an OPML file or of a page listing feeds', load: 'Load list', example: 'Try an example', hint: '— a GitHub "blob" link to an OPML is fine, or a page like https://rssly.io/feeds: I look for feeds in its subpages too.',
+    loading_list: 'Reading the list… (for a web page I check every address: it can take up to a minute)', loaded_page: '{0} feeds found in {1} pages ({2} addresses checked, {3} were not feeds)', loaded_timeout: ' · out of time: some addresses were not checked', loaded: '{0} feeds found', loaded_conv: '{0} feeds found (GitHub link converted to the raw file)',
     loaded_extra: '{0} already present, {1} duplicates in the file merged, {2} invalid addresses ignored',
     search: 'Search by name, site or category…', all_cats: 'All categories', uncat: 'Uncategorized',
     sel_visible: 'Select visible', sel_none: 'Clear selection', hide_existing: 'Hide already added',
@@ -173,7 +173,7 @@ var I18N = {
     confirm_q: 'Add {0} sources to the sync?', yes_add: 'Yes, add', cancel: 'Cancel',
     adding: 'Adding {0} of {1}…', done: 'Done: added {0} of {1} sources.', done_one: 'Done: added 1 source of {0}.', done_ok_tail: ' They will show up in the card after the next cron runs (it may take a few minutes).',
     failed_hdr: 'Not added:', stopped: 'Stopped: {0}',
-    err_token_missing: 'Enter the API token.', err_url_missing: 'Enter the OPML file address.',
+    err_token_missing: 'Enter the API token.', err_url_missing: 'Enter the address of the OPML file or page.',
     err_token: 'Invalid token: check settings.php.', err_missing_file: 'The server could not find {0}: copy the file next to sources_admin.php.',
     err_not_json: 'Unexpected response from the server (HTTP {0}).', err_net: 'Server not reachable ({0}).',
     err_timeout: 'timed out', no_sources_warn: 'Cannot read the current sources ({0}): I cannot add until this is fixed.'
@@ -241,7 +241,7 @@ function request(path, init, timeoutMs) {
 }
 
 function apiGet(path, query) {
-  return request(path + '?' + new URLSearchParams(query).toString(), {}, query.action === 'preview' ? PREVIEW_TIMEOUT_MS : 40000)
+  return request(path + '?' + new URLSearchParams(query).toString(), {}, query.action === 'preview' ? PREVIEW_TIMEOUT_MS : 120000)
     .then(function (d) { if (d.version) state.serverVer = 'opml_import.php v' + d.version + ' · ' + d.build; if (!d.ok) throw ApiError(d.error || 'errore', false); return d; });
 }
 
@@ -278,7 +278,9 @@ function loadList() {
     queue.length = 0;
     renderList(d);
     var extra = t('loaded_extra', state.feeds.filter(function (f) { return f.exists; }).length, d.duplicates_in_file || 0, d.skipped_invalid || 0);
-    var head = d.converted ? t('loaded_conv', d.total) : t('loaded', d.total);
+    var head = d.mode === 'page'
+      ? t('loaded_page', d.total, d.pages_scanned || 1, d.candidates_checked || 0, d.not_feeds || 0) + (d.timed_out ? t('loaded_timeout') : '')
+      : (d.converted ? t('loaded_conv', d.total) : t('loaded', d.total));
     var warn = state.existing === null ? ' ⚠ ' + t('no_sources_warn', state.existingError) : '';
     showMsg(head + ' · ' + extra + warn, state.existing === null ? 'warn' : 'ok');
     els.chooser.hidden = false;

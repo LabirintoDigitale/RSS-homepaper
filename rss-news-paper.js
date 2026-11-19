@@ -7,7 +7,7 @@
 // Bump this on every change you send me / every time you copy a new file to
 // the server. Shown at the top of the card so you can verify at a glance
 // which build is actually loaded, without opening dev tools.
-const CARD_VERSION = 'v1.30.0 · build 2026-11-19-01';
+const CARD_VERSION = 'v1.31.0 · build 2026-11-19-02';
 
 // ─── Defaults per il tuo setup (RSS server) ────────────────────────────────
 // Se l'utente non imposta questi valori nella card, vengono usati questi.
@@ -108,7 +108,7 @@ const RSS_LOCALES = {
       feed_sources:      'RSS feed sources (server)',
       feed_add:          '+ Add feed',
       feed_color:        'Source color (used for the category badge)',
-      opml_url:          'Import sources from an OPML file (address)',
+      opml_url:          'Import sources from an OPML file or a web page (address)',
       opml_open:         'Open selection page',
       opml_hint:         'Opens a page where you choose which feeds to add, with a preview of their articles.',
       opml_need_token:   'Enter the feed admin token first.',
@@ -234,7 +234,7 @@ const RSS_LOCALES = {
       feed_sources:        'RSS források (szerver)',
       feed_add:            '+ Forrás hozzáadása',
       feed_color:          'Forrás színe (a kategória jelöléséhez)',
-      opml_url:            'Források importálása OPML fájlból (cím)',
+      opml_url:            'Források importálása OPML fájlból vagy weboldalról (cím)',
       opml_open:           'Kiválasztó oldal megnyitása',
       opml_hint:           'Megnyit egy oldalt, ahol kiválaszthatod a hozzáadandó csatornákat, cikkelőnézettel.',
       opml_need_token:     'Először add meg a források adminisztrációs tokenjét.',
@@ -360,7 +360,7 @@ const RSS_LOCALES = {
       feed_sources:        'RSS-Quellen (Server)',
       feed_add:            '+ Quelle hinzufügen',
       feed_color:          'Quellfarbe (für das Kategorie-Label)',
-      opml_url:            'Quellen aus einer OPML-Datei importieren (Adresse)',
+      opml_url:            'Quellen aus einer OPML-Datei oder Webseite importieren (Adresse)',
       opml_open:           'Auswahlseite öffnen',
       opml_hint:           'Öffnet eine Seite, auf der du die hinzuzufügenden Feeds auswählst, mit Vorschau der Artikel.',
       opml_need_token:     'Gib zuerst das Feed-Admin-Token ein.',
@@ -491,7 +491,7 @@ const RSS_LOCALES = {
       feed_sources:         'Fonti RSS (server)',
       feed_add:             '+ Aggiungi fonte RSS',
       feed_color:           "Colore della fonte (usato per l'etichetta categoria)",
-      opml_url:             'Importa fonti da un file OPML (indirizzo)',
+      opml_url:             'Importa fonti da un file OPML o da una pagina web (indirizzo)',
       opml_open:            'Apri pagina di selezione',
       opml_hint:            'Si apre una pagina dove scegli quali feed aggiungere, con anteprima degli articoli.',
       opml_need_token:      'Inserisci prima il token amministrazione fonti.',
@@ -2807,7 +2807,7 @@ class RssNewsCardEditor extends HTMLElement {
 
           <label style="margin-top:14px;">${t.ed.opml_url}</label>
           <div class="rss-src-row" style="flex-wrap:wrap;">
-            <input type="text" id="ed-opml-url" placeholder="https://github.com/…/feeds.opml" value="${(c.opml_url || '').replace(/"/g, '&quot;')}" style="flex:1 1 180px;min-width:0;"/>
+            <input type="text" id="ed-opml-url" placeholder="https://github.com/…/feeds.opml · https://rssly.io/feeds" value="${(c.opml_url || '').replace(/"/g, '&quot;')}" style="flex:1 1 180px;min-width:0;"/>
             <button class="rss-add" id="ed-opml-open">${t.ed.opml_open}</button>
           </div>
           <div id="ed-opml-status" style="font-size:11px;opacity:0.7;margin-top:4px;">${t.ed.opml_hint}</div>

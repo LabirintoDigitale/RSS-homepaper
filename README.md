@@ -11,7 +11,7 @@ Card per le plance di Home Assistant che mostra le notizie di più feed RSS come
 - **Riassunto automatico**: tocchi una notizia e si apre un popup con le frasi principali dell'articolo, il luogo di cui parla e, se vuoi, i tempi di ogni fase. Da lì puoi aprire l'articolo completo.
 - **Traduttore**: le notizie in lingua straniera arrivano tradotte in italiano (titolo e descrizione, con il testo originale sotto in corsivo), e lo stesso vale per i riassunti. Scegli tu l'ordine dei servizi: Google Traduttore, Ollama (sul tuo server) o un traduttore locale tipo LibreTranslate. Se il primo non risponde, si passa al successivo.
 - **Impostazioni dall'ingranaggio** ⚙️: si aprono direttamente dalla card, senza mettere la plancia in modifica (vedi sotto).
-- **Gestione fonti** dalla card: aggiungi, modifica, verifica o elimina i feed, oppure importali da un file OPML.
+- **Gestione fonti** dalla card: aggiungi, modifica, verifica o elimina i feed, oppure importali da un file OPML o da una **pagina web**. Basta l'indirizzo di un elenco come `https://rssly.io/feeds` o del sito di un giornale: il server trova i feed, anche nelle sottopagine, e ti fa scegliere quali aggiungere.
 - **Blocca notizie**: tieni premuta una notizia per nascondere tutte quelle che vengono dallo stesso percorso del sito.
 - **Larghezza e altezza automatiche**: la card può occupare tutta la pagina e riempire lo spazio in verticale.
 
@@ -82,7 +82,7 @@ Gli amministratori vedono un **ingranaggio ⚙️** in alto a destra nella card.
 
 ![Le impostazioni aperte dall'ingranaggio](assets/screenshot-impostazioni.png)
 
-Dall'editor puoi anche gestire le fonti RSS sul server, importare un file OPML e scegliere l'ordine dei traduttori.
+Dall'editor puoi anche gestire le fonti RSS sul server, importare fonti da un file OPML o da una pagina web, e scegliere l'ordine dei traduttori.
 
 L'ingranaggio funziona con le plance modificabili dall'interfaccia. Con una plancia in YAML le modifiche vanno fatte nel file della plancia.
 

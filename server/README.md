@@ -96,7 +96,17 @@ Nelle impostazioni della card (ingranaggio ⚙️):
 - **Percorso server fonti RSS**: `http://IP-DEL-SERVER/news-aggregator/`, cioè la cartella, senza nome file.
 - **Token amministrazione fonti**: lo stesso token di `settings.php`.
 
-Da lì gestisci le fonti (vengono scritte in `config.php`), importi un file OPML e scegli l'ordine dei traduttori. `config.php` contiene già alcune fonti di esempio.
+Da lì gestisci le fonti (vengono scritte in `config.php`), importi fonti da un file OPML o da una pagina web e scegli l'ordine dei traduttori. `config.php` contiene già alcune fonti di esempio.
+
+### Importare fonti da una pagina web
+
+Nel campo dell'importazione puoi mettere, al posto di un file OPML:
+
+- **un elenco di feed**, per esempio `https://rssly.io/feeds`. Il server legge la pagina e le sue sottopagine sotto lo stesso percorso (al massimo 30), quindi qui tutte le categorie. Le categorie diventano i gruppi nella pagina di scelta;
+- **il sito di un giornale**, per esempio `https://www.ilpost.it/`. Il server prende i feed dichiarati dal sito. Se il sito non ne dichiara, prova gli indirizzi più comuni (`/feed`, `/rss.xml`, `/atom.xml`…);
+- **un feed**: viene proposto solo quello.
+
+Ogni indirizzo trovato viene scaricato per controllare che sia davvero un feed RSS/Atom: nella lista restano solo quelli che funzionano. Su un elenco grande servono 10-60 secondi. Le pagine che mostrano l'elenco solo dopo il caricamento (JavaScript) non si possono leggere.
 
 ## Pulizia della cache
 
@@ -125,7 +135,7 @@ Tutto quello che finisce in `cache/` si pulisce da solo, non serve fare niente:
 | `sources_admin.php` | Aggiunge, modifica ed elimina le fonti dalla card |
 | `test_feed.php` | Bottone 🔍 "Verifica" di una fonte |
 | `block_paths.php` | Notizie bloccate con il tocco prolungato |
-| `opml_import.html`, `opml_import.php` | Importazione delle fonti da un file OPML |
+| `opml_import.html`, `opml_import.php` | Importazione delle fonti da un file OPML o da una pagina web |
 | `lib/` | Decodifica dei link Google News, recupero immagini, argomenti, luoghi, traduzione |
 
 `summarize.php` e `opml_import.php` scaricano solo link di notizie dei tuoi feed (o feed scelti da chi ha il token) e rifiutano gli indirizzi della rete locale.
