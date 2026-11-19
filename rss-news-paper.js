@@ -7,7 +7,7 @@
 // Bump this on every change you send me / every time you copy a new file to
 // the server. Shown at the top of the card so you can verify at a glance
 // which build is actually loaded, without opening dev tools.
-const CARD_VERSION = 'v1.29.3 · build 2026-10-23-04';
+const CARD_VERSION = 'v1.30.0 · build 2026-11-19-01';
 
 // ─── Defaults per il tuo setup (RSS server) ────────────────────────────────
 // Se l'utente non imposta questi valori nella card, vengono usati questi.
@@ -50,6 +50,11 @@ const RSS_LOCALES = {
     no_articles: 'No articles to display.',
     filter_all: 'All sources',
     filter_all_topics: 'All topics',
+    settings: {
+      open: 'Settings', title: 'Card settings', save: 'Save', cancel: 'Cancel', saving: 'Saving…',
+      err_load: 'Could not read the dashboard', err_save: 'Could not save the dashboard',
+      err_notfound: 'This card was not found in the dashboard (dashboard in YAML mode or automatic?). Use the dashboard editor.',
+    },
     summary: {
       loading: 'Reading the article…', open: 'Open article', close: 'Close',
       stats: 'Statistics', st_fetch: 'Downloading the page', st_extract: 'Extracting the text', st_summarize: 'Building the summary', st_place: 'Finding the place', st_translate: 'Translating',
@@ -428,6 +433,11 @@ const RSS_LOCALES = {
     no_articles: 'Nessun articolo da mostrare.',
     filter_all: 'Tutte le fonti',
     filter_all_topics: 'Tutti gli argomenti',
+    settings: {
+      open: 'Impostazioni', title: 'Impostazioni della card', save: 'Salva', cancel: 'Annulla', saving: 'Salvataggio…',
+      err_load: 'Non riesco a leggere la plancia', err_save: 'Non riesco a salvare la plancia',
+      err_notfound: 'Non trovo questa card nella plancia (plancia in modalità YAML o automatica?). Usa la modifica della plancia.',
+    },
     summary: {
       loading: "Sto leggendo l'articolo…", open: 'Apri articolo', close: 'Chiudi',
       stats: 'Statistiche', st_fetch: 'Scarico la pagina', st_extract: 'Estraggo il testo', st_summarize: 'Creo il riassunto', st_place: 'Cerco il luogo', st_translate: 'Traduco in italiano',
@@ -562,6 +572,17 @@ const HA_LANG_TO_DATE_LOCALE = {
   ko: 'ko-KR',
 };
 
+// JSON con le chiavi in ordine: serve a riconoscere la config di questa card
+// dentro la config della plancia anche se le chiavi sono in ordine diverso.
+function stableStringify(v) {
+  if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort()
+      .map(k => JSON.stringify(k) + ':' + stableStringify(v[k])).join(',') + '}';
+  }
+  return JSON.stringify(v);
+}
+
 function getLocale(lang) {
   return RSS_LOCALES[lang] || RSS_LOCALES['en'];
 }
@@ -645,6 +666,9 @@ class RssNewsCard extends HTMLElement {
   }
 
   setConfig(config) {
+    // Config così come sta nella plancia: serve all'ingranaggio per ritrovare
+    // questa card nella config della plancia e salvarci sopra le modifiche.
+    this._rawConfig = config;
     this._config = {
       title:            config.title || '',
       entity:           (config.entity && typeof config.entity === 'string') ? config.entity : DEFAULT_ENTITY,
@@ -701,6 +725,8 @@ class RssNewsCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    this._syncSettingsBtn();
+    if (this._settingsEditor) this._settingsEditor.hass = hass;
     // Aggiornamento colori fonte: chiamata leggera e auto-limitata nel
     // tempo, va fatta a ogni "tick" di hass (non solo quando cambia il
     // sensore) altrimenti se il sensore aggiorna raramente il colore
@@ -1629,6 +1655,10 @@ class RssNewsCard extends HTMLElement {
           .rss-header{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
           .rss-header-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
           .rss-title{font-size:24px;font-weight:400;margin-bottom:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+          .rss-settings-btn{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:none;border-radius:50%;background:transparent;color:var(--secondary-text-color);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+          .rss-settings-btn:hover{background:var(--secondary-background-color);color:var(--primary-text-color);}
+          .rss-settings-btn[hidden]{display:none;}
+          .rss-settings-btn svg{width:20px;height:20px;fill:currentColor;}
           .rss-version{font-size:10px;color:var(--secondary-text-color);opacity:0.55;white-space:nowrap;align-self:flex-end;}
           .rss-source-filter-wrap,.rss-topic-filter-wrap{position:relative;flex:1;min-width:0;}
           .rss-source-filter-btn,.rss-topic-filter-btn{display:flex;align-items:center;gap:6px;width:100%;max-width:100%;padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid var(--divider-color);background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -1663,6 +1693,7 @@ class RssNewsCard extends HTMLElement {
             <div class="rss-header-top">
               <div class="rss-title-el"></div>
               <div class="rss-version">${CARD_VERSION}</div>
+              <button type="button" class="rss-settings-btn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg></button>
             </div>
             <div class="rss-filters-row">
               <div class="rss-source-filter-wrap">
@@ -1689,6 +1720,14 @@ class RssNewsCard extends HTMLElement {
 
       </ha-card>`;
     this._initialized = true;
+
+    const settingsBtn = this.querySelector('.rss-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.title = this._st().open;
+      settingsBtn.setAttribute('aria-label', this._st().open);
+      settingsBtn.addEventListener('click', (ev) => { ev.stopPropagation(); this._openSettings(); });
+    }
+    this._syncSettingsBtn();
 
     // Salva la posizione di scroll mentre l'utente scorre (con un piccolo
     // debounce: non ha senso scrivere su localStorage ad ogni pixel). Il
@@ -1801,6 +1840,171 @@ class RssNewsCard extends HTMLElement {
       setTimeout(() => this._applyAutoHeight(), 300);
     }
     this._watchLayout();
+  }
+
+  // ── Impostazioni dall'ingranaggio ───────────────────────────────────────────
+  // L'ingranaggio apre lo stesso editor della modifica plancia in un popup. "Salva"
+  // legge la config della plancia, ritrova questa card e la sostituisce, poi salva
+  // la plancia: niente modalità modifica. Salvare una plancia richiede un admin,
+  // quindi agli altri utenti l'ingranaggio non viene mostrato.
+  _st() {
+    return { ...RSS_LOCALES.en.settings, ...(getLocale(this._getLang()).settings || {}) };
+  }
+
+  _canEditSettings() {
+    return !!(this._hass && this._hass.user && this._hass.user.is_admin && this._rawConfig);
+  }
+
+  _syncSettingsBtn() {
+    const b = this.querySelector('.rss-settings-btn');
+    if (b) b.hidden = !this._canEditSettings();
+  }
+
+  // Plancia corrente dall'indirizzo: /dashboard-news/0 -> "dashboard-news";
+  // la plancia predefinita (/lovelace/...) si chiede senza url_path.
+  _dashboardUrlPath() {
+    const seg = (window.location.pathname || '').split('/').filter(Boolean)[0] || '';
+    return (!seg || seg === 'lovelace') ? null : decodeURIComponent(seg);
+  }
+
+  // Cerca la card dentro la config della plancia (viste, sezioni, stack, ...).
+  // Ritorna { parent, key } della card uguale alla config attuale; se non c'è
+  // una uguale ma nella plancia c'è una sola rss-news-card, ritorna quella.
+  _findCardInDashboard(lov) {
+    const type = this._rawConfig.type;
+    const target = stableStringify(this._rawConfig);
+    const exact = [], all = [];
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return;
+      for (const key of Object.keys(node)) {
+        const v = node[key];
+        if (v && typeof v === 'object') {
+          if (!Array.isArray(v) && v.type === type) {
+            all.push({ parent: node, key });
+            if (stableStringify(v) === target) exact.push({ parent: node, key });
+          }
+          walk(v);
+        }
+      }
+    };
+    walk(lov);
+    if (exact.length) return exact[0];
+    if (all.length === 1) return all[0];
+    return null;
+  }
+
+  _ensureSettingsStyles() {
+    this._ensureSummaryStyles();
+    if (document.getElementById('rss-settings-modal-style')) return;
+    const style = document.createElement('style');
+    style.id = 'rss-settings-modal-style';
+    style.textContent = `
+      .rss-set-box{max-width:640px;max-height:92vh;}
+      .rss-set-head{display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px;border-bottom:1px solid var(--divider-color,rgba(255,255,255,0.12));flex-shrink:0;}
+      .rss-set-head .rss-sum-title{flex:1;}
+      .rss-set-x{width:36px;height:36px;border:none;border-radius:50%;background:transparent;color:var(--secondary-text-color,#aaa);font-size:22px;line-height:1;cursor:pointer;}
+      .rss-set-x:hover{background:var(--secondary-background-color,rgba(255,255,255,0.08));}
+      .rss-set-body{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:60px;}
+      .rss-set-actions{align-items:center;}
+      .rss-set-msg{flex:1;font-size:12px;color:var(--error-color,#f44336);}
+      .rss-sum-btn:disabled{opacity:0.6;cursor:default;}
+    `;
+    document.head.appendChild(style);
+  }
+
+  _openSettings() {
+    if (this._settingsOverlay || !this._canEditSettings()) return;
+    this._ensureSettingsStyles();
+    const t = this._st();
+    let draft = { ...this._rawConfig };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'rss-sum-overlay';
+    overlay.innerHTML = `
+      <div class="rss-sum-box rss-set-box" role="dialog" aria-modal="true">
+        <div class="rss-set-head">
+          <div class="rss-sum-title"></div>
+          <button type="button" class="rss-set-x">×</button>
+        </div>
+        <div class="rss-set-body"></div>
+        <div class="rss-sum-actions rss-set-actions">
+          <div class="rss-set-msg"></div>
+          <button type="button" class="rss-sum-btn rss-sum-btn-secondary rss-set-cancel"></button>
+          <button type="button" class="rss-sum-btn rss-sum-btn-primary rss-set-save"></button>
+        </div>
+      </div>`;
+    overlay.querySelector('.rss-sum-title').textContent = t.title;
+    overlay.querySelector('.rss-set-x').setAttribute('aria-label', t.cancel);
+    const cancelBtn = overlay.querySelector('.rss-set-cancel');
+    const saveBtn = overlay.querySelector('.rss-set-save');
+    const msg = overlay.querySelector('.rss-set-msg');
+    cancelBtn.textContent = t.cancel;
+    saveBtn.textContent = t.save;
+
+    const editor = document.createElement('rss-news-card-editor');
+    // Prima hass (l'editor sceglie la lingua quando si disegna), poi la config.
+    editor.hass = this._hass;
+    editor.setConfig(draft);
+    editor.addEventListener('config-changed', (ev) => {
+      ev.stopPropagation();
+      if (ev.detail && ev.detail.config) draft = { ...ev.detail.config };
+    });
+    overlay.querySelector('.rss-set-body').appendChild(editor);
+
+    const close = () => this._closeSettings();
+    overlay.querySelector('.rss-set-x').addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true; cancelBtn.disabled = true;
+      saveBtn.textContent = t.saving;
+      msg.textContent = '';
+      try {
+        const newCfg = { ...draft, type: this._rawConfig.type };
+        await this._saveConfigToDashboard(newCfg);
+        close();
+        this.setConfig(newCfg);
+      } catch (e) {
+        msg.textContent = (e && e.message) ? e.message : String(e);
+        saveBtn.disabled = false; cancelBtn.disabled = false;
+        saveBtn.textContent = t.save;
+      }
+    });
+    this._settingsKeyHandler = (ev) => { if (ev.key === 'Escape') close(); };
+    document.addEventListener('keydown', this._settingsKeyHandler);
+
+    document.body.appendChild(overlay);
+    this._settingsOverlay = overlay;
+    this._settingsEditor = editor;
+  }
+
+  _closeSettings() {
+    if (this._settingsKeyHandler) {
+      document.removeEventListener('keydown', this._settingsKeyHandler);
+      this._settingsKeyHandler = null;
+    }
+    if (this._settingsOverlay) { this._settingsOverlay.remove(); this._settingsOverlay = null; }
+    this._settingsEditor = null;
+  }
+
+  async _saveConfigToDashboard(newCfg) {
+    const t = this._st();
+    const urlPath = this._dashboardUrlPath();
+    const base = urlPath ? { url_path: urlPath } : {};
+    const errText = (e) => (e && e.message) ? e.message : (e && e.code) ? e.code : String(e);
+    let lov;
+    try {
+      lov = await this._hass.callWS({ type: 'lovelace/config', ...base });
+    } catch (e) {
+      throw new Error(t.err_load + ': ' + errText(e));
+    }
+    const hit = (lov && !lov.strategy) ? this._findCardInDashboard(lov) : null;
+    if (!hit) throw new Error(t.err_notfound);
+    hit.parent[hit.key] = newCfg;
+    try {
+      await this._hass.callWS({ type: 'lovelace/config/save', config: lov, ...base });
+    } catch (e) {
+      throw new Error(t.err_save + ': ' + errText(e));
+    }
   }
 
   // ── Larghezza della card ─────────────────────────────────────────────────────
@@ -2026,6 +2230,7 @@ class RssNewsCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._closeSettings();
     this._closeSummaryPopup();
     if (this._boundLayout) window.removeEventListener('resize', this._boundLayout);
     if (this._layoutRO) { this._layoutRO.disconnect(); this._layoutRO = null; }
